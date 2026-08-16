@@ -43,7 +43,7 @@ const heroSchema = new mongoose.Schema(
 
         endDate: Date,
     },
-    { timestamps: true }
+    { timestamps: true ,versionKey : false}
 );
 
 export const heroModel = model<THero>('Hero', heroSchema);

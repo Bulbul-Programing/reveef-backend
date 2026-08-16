@@ -56,7 +56,7 @@ const couponSchema = new mongoose.Schema<TCoupon>(
             default: true,
         },
     },
-    { timestamps: true }
+    { timestamps: true, versionKey: false }
 );
 
 export const couponModel = model<TCoupon>('coupon', couponSchema);

@@ -32,7 +32,7 @@ const reviewSchema = new mongoose.Schema<TReview>(
             default: true,
         },
     },
-    { timestamps: true }
+    { timestamps: true, versionKey : false }
 );
 
 reviewSchema.index(

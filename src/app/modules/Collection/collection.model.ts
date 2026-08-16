@@ -25,7 +25,7 @@ const collectionSchema = new mongoose.Schema<TCollection>(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 export const collectionModel = model<TCollection>('collection', collectionSchema);

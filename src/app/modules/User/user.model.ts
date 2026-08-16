@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema<TUser>(
             default: true,
         },
     },
-    { timestamps: true }
+    { timestamps: true, versionKey : false }
 );
 
 export const userModel = model<TUser>('user', userSchema)

@@ -38,7 +38,7 @@ const addressSchema = new mongoose.Schema<TAddress>(
             default: false,
         },
     },
-    { timestamps: true }
+    { timestamps: true, versionKey: false }
 );
 
 export const addressModel = model<TAddress>('Address', addressSchema);

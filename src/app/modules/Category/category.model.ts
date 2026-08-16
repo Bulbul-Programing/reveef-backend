@@ -9,7 +9,8 @@ const categorySchema = new mongoose.Schema<TCategory>({
     imageUrl: {type: String},
     isActive: { type: Boolean, default: true }
 }, {
-    timestamps: true
+    timestamps: true,
+    versionKey : false
 });
 
 export const categoryModel = model<TCategory>('Category', categorySchema);

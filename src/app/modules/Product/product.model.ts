@@ -55,7 +55,7 @@ const productSchema = new mongoose.Schema<TProduct>(
             default: true,
         },
     },
-    { timestamps: true }
+    { timestamps: true, versionKey : false }
 );
 
 export const productModel = model<TProduct>('Product', productSchema);

@@ -75,7 +75,7 @@ const orderSchema = new mongoose.Schema(
             default: "pending",
         },
     },
-    { timestamps: true }
+    { timestamps: true, versionKey : false }
 );
 
 export const orderModel = model<TOrder>('Order', orderSchema);

@@ -51,7 +51,7 @@ const orderItemSchema = new mongoose.Schema(
             required: true,
         },
     },
-    { timestamps: true }
+    { timestamps: true, versionKey : false }
 );
 
 export const orderItemModel = model<TOrderItem>('orderItem', orderItemSchema);

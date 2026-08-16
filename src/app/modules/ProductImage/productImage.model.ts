@@ -23,7 +23,7 @@ const productImageSchema = new mongoose.Schema<TProductImage>(
             default: 0,
         },
     },
-    { timestamps: true }
+    { timestamps: true, versionKey : false }
 );
 
 export const productImageModel = model<TProductImage>('productImage', productImageSchema);
