@@ -12,24 +12,26 @@ router.get("/", ProductControllers.getAllProducts);
 router.get("/:id", ProductControllers.getSingleProduct);
 
 // Admin / stuff management routes
+// Single admin form submit: product + category/collection refs + images + variants,
+// created atomically. See createProductWithDetailsIntoDB for the transaction logic.
 router.post(
-  "/",
-  checkAuth("admin", "stuff"),
-  validateRequest(ProductValidation.createProductValidationSchema),
-  ProductControllers.createProduct
+    "/",
+    checkAuth("admin", "stuff"),
+    validateRequest(ProductValidation.createProductWithDetailsValidationSchema),
+    ProductControllers.createProductWithDetails
 );
 
 router.patch(
-  "/:id",
-  checkAuth("admin", "stuff"),
-  validateRequest(ProductValidation.updateProductValidationSchema),
-  ProductControllers.updateProduct
+    "/:id",
+    checkAuth("admin", "stuff"),
+    validateRequest(ProductValidation.updateProductValidationSchema),
+    ProductControllers.updateProduct
 );
 
 router.patch(
-  "/:id/deactivate",
-  checkAuth("admin", "stuff"),
-  ProductControllers.deactivateProduct
+    "/:id/deactivate",
+    checkAuth("admin", "stuff"),
+    ProductControllers.deactivateProduct
 );
 
 export const productRouter = router;

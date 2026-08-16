@@ -1,7 +1,7 @@
-import type { ObjectId } from "mongoose";
+import type { ObjectId, Types } from "mongoose";
 
 export type TProductImage = {
-  product: ObjectId;
+  product: Types.ObjectId;
   url: string;
   alt?: string;
   sortOrder?: number;
