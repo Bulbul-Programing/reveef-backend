@@ -1,7 +1,7 @@
-import type { ObjectId } from "mongoose";
+import type { Types } from "mongoose";
 
 export type TProductVariant = {
-  product: ObjectId;
+  product: Types.ObjectId;
   sku: string;
   size: string;
   color: {

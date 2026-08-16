@@ -1,11 +1,11 @@
-import type { ObjectId } from "mongoose";
+import type { ObjectId, Types } from "mongoose";
 
 export type TProduct = {
     name: string;
     slug: string;
     description: string;
-    category: ObjectId;
-    collections?: string[];
+    category: Types.ObjectId;
+    collections?: Types.ObjectId[];
     basePrice: number;
     discountPrice?: number;
     isFeatured?: boolean;

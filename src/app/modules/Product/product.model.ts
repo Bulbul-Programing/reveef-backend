@@ -30,7 +30,7 @@ const productSchema = new mongoose.Schema<TProduct>(
         collections: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "Collection",
+                ref: "collection",
             },
         ],
 
