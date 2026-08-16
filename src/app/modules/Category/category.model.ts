@@ -1,0 +1,15 @@
+import mongoose, { model } from "mongoose";
+import type { TCategory } from "./category.interface.ts";
+
+const categorySchema = new mongoose.Schema<TCategory>({
+    name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
+    description: String,
+    parent: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
+    imageUrl: {type: String},
+    isActive: { type: Boolean, default: true }
+}, {
+    timestamps: true
+});
+
+export const categoryModel = model<TCategory>('Category', categorySchema);
