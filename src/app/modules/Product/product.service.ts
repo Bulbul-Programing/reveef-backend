@@ -182,7 +182,8 @@ const getAllProductsFromDB = async (
     productModel
       .find(baseFilter)
       .populate("category", "name slug")
-      .populate("collections", "name slug"),
+      .populate("collections", "name slug")
+      .populate("images", "url alt sortOrder"),
     query
   )
     .search(productSearchableFields)
@@ -212,7 +213,8 @@ const getSingleProductFromDB = async (
   const product = await productModel
     .findOne(isObjectId ? { _id: idOrSlug } : { slug: idOrSlug })
     .populate("category", "name slug")
-    .populate("collections", "name slug");
+    .populate("collections", "name slug")
+    // .populate("images", "url");
 
   if (!product || (!canSeeInactive && !product.isActive)) {
     throw new AppError(404, "Product not found");
@@ -225,11 +227,15 @@ const getSingleProductFromDB = async (
 
   const variants = await productVariantModel
     .find(variantFilter)
-    .sort({ price: 1 });
+    .sort({ price: 1 })
+    .select("color sku size price stock image")
+    ;
 
   const images = await productImageModel
     .find({ product: product._id })
-    .sort({ sortOrder: 1 });
+    .sort({ sortOrder: 1 })
+    .select("url alt sortOrder")
+    ;
 
   return { ...product.toObject(), variants, images };
 };
@@ -275,11 +281,7 @@ const updateProductIntoDB = async (
   return result;
 };
 
-/**
- * Deactivating a product cascades to its variants, so the storefront
- * variant listing (which already filters on variant.isActive) stops
- * surfacing them too, without needing an extra join on every read.
- */
+
 const deactivateProductIntoDB = async (targetId: string) => {
   const product = await productModel.findById(targetId);
   if (!product) {
@@ -289,7 +291,7 @@ const deactivateProductIntoDB = async (targetId: string) => {
   const result = await productModel.findByIdAndUpdate(
     targetId,
     { isActive: false },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   await productVariantModel.updateMany(

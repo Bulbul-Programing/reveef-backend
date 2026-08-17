@@ -90,7 +90,7 @@ const updateUserRoleIntoDB = async (targetId: string, role: TUserRole) => {
   const result = await userModel.findByIdAndUpdate(
     targetId,
     { role },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   return result;
@@ -105,7 +105,7 @@ const updateUserStatusIntoDB = async (targetId: string, isActive: boolean) => {
   const result = await userModel.findByIdAndUpdate(
     targetId,
     { isActive },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   return result;

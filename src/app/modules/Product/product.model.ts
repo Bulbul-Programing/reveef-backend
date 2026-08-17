@@ -55,7 +55,21 @@ const productSchema = new mongoose.Schema<TProduct>(
             default: true,
         },
     },
-    { timestamps: true, versionKey : false }
+    { timestamps: true, versionKey: false }
 );
+
+productSchema.virtual("images", {
+    ref: "productImage",
+    localField: "_id",
+    foreignField: "product",
+})
+
+productSchema.set("toJSON", {
+    virtuals: true,
+});
+
+productSchema.set("toObject", {
+    virtuals: true,
+});
 
 export const productModel = model<TProduct>('Product', productSchema);

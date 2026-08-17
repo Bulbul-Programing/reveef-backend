@@ -19,17 +19,17 @@ const addressSchema = new mongoose.Schema<TAddress>(
             required: true,
         },
 
-        addressLine: {
+        address: {
             type: String,
             required: true,
         },
 
-        city: {
+        district: {
             type: String,
             required: true,
         },
 
-        area: String,
+        upazila: String,
 
         postalCode: String,
 

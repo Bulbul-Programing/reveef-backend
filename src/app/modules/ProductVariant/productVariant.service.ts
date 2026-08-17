@@ -128,7 +128,7 @@ const adjustStockIntoDB = async (variantId: string, quantity: number) => {
     const result = await productVariantModel.findOneAndUpdate(
       { _id: variantId, stock: { $gte: -quantity } },
       { $inc: { stock: quantity } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!result) {
@@ -145,7 +145,7 @@ const adjustStockIntoDB = async (variantId: string, quantity: number) => {
   const result = await productVariantModel.findByIdAndUpdate(
     variantId,
     { $inc: { stock: quantity } },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (!result) {
@@ -164,7 +164,7 @@ const deactivateProductVariantIntoDB = async (variantId: string) => {
   const result = await productVariantModel.findByIdAndUpdate(
     variantId,
     { isActive: false },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   return result;

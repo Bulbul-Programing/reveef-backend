@@ -1,12 +1,12 @@
-import type { ObjectId } from "mongoose";
+import type { Types } from "mongoose";
 
 export type TAddress = {
-  user: ObjectId;
+  user: Types.ObjectId;
   fullName: string;
   phone: string;
-  addressLine: string;
-  city: string;
-  area?: string;
+  address: string;
+  district: string;
+  upazila?: string;
   postalCode?: string;
   isDefault?: boolean;
   createdAt?: Date;
