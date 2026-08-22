@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
-import AppError from "../../error/AppError.ts";
+import crypto from "crypto";
 import type { TRequester, TUser, TUserRole } from "./user.interface.ts";
 import { userModel } from "./user.model.ts";
+import AppError from "../../error/AppError.ts";
 import QueryBuilder from "../../builder/QueryBuilder.ts";
 
 const userSearchableFields = ["name", "email", "phoneNumber"];
@@ -26,6 +27,60 @@ const createUserIntoDB = async (payload: TUser) => {
   return result;
 };
 
+/**
+ * Guest-checkout identity resolution: matched purely by phoneNumber. If the
+ * number is already registered, that account is reused as-is (name is NOT
+ * overwritten — an existing customer's name shouldn't change just because
+ * a new order used a slightly different spelling).
+ *
+ * If it's a new number, an account is created so the order has somewhere
+ * to live and the customer can eventually see it on a dashboard. The
+ * password is a cryptographically random value, NOT a fixed/shared
+ * "dummy" password — a predictable password on every guest account would
+ * let anyone who learns a customer's phone number (e.g. off a delivery
+ * label) log into their account. This account is unusable to log into
+ * until the customer goes through a proper password-reset / OTP flow.
+ */
+const findOrCreateGuestUserIntoDB = async (payload: {
+  name: string;
+  phoneNumber: string;
+}) => {
+  
+  const existingUser = await userModel.findOne({
+    phoneNumber: payload.phoneNumber,
+  });
+  
+  if (existingUser) {
+    return existingUser;
+  }
+
+  // Get last 3 digits of phone number
+  const phoneLast3 = payload.phoneNumber.slice(-3);
+
+  // Remove spaces from name
+  const cleanName = payload.name.replace(/\s+/g, "");
+
+  // Create password: name + last 3 digits
+  const randomPassword = `${cleanName}${phoneLast3}`.toLocaleLowerCase();
+
+  const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+  const newUser = await userModel.create({
+    name: payload.name,
+    phoneNumber: payload.phoneNumber,
+    password: hashedPassword,
+    role: "customer",
+    isActive: true,
+  });
+
+  const addPassword = {
+    ...newUser.toObject(),
+    password: randomPassword,
+  };
+
+  return addPassword;
+};
+
 const getAllUsersFromDB = async (query: Record<string, unknown>) => {
   const userQuery = new QueryBuilder(userModel.find(), query)
     .search(userSearchableFields)
@@ -35,9 +90,9 @@ const getAllUsersFromDB = async (query: Record<string, unknown>) => {
     .fields();
 
   const result = await userQuery.modelQuery;
-//   const meta = await userQuery.countTotal();
+  const meta = await userQuery.countTotal();
 
-  return {  result };
+  return { meta, result };
 };
 
 const getMyProfileFromDB = async (userId: string) => {
@@ -90,7 +145,7 @@ const updateUserRoleIntoDB = async (targetId: string, role: TUserRole) => {
   const result = await userModel.findByIdAndUpdate(
     targetId,
     { role },
-    { returnDocument: 'after' }
+    { new: true }
   );
 
   return result;
@@ -105,7 +160,7 @@ const updateUserStatusIntoDB = async (targetId: string, isActive: boolean) => {
   const result = await userModel.findByIdAndUpdate(
     targetId,
     { isActive },
-    { returnDocument: 'after' }
+    { new: true }
   );
 
   return result;
@@ -134,6 +189,15 @@ const changePasswordIntoDB = async (
   return null;
 };
 
+/**
+ * Role-based response shaping.
+ *  - Owner viewing themselves, or an admin viewing anyone -> full document
+ *  - "stuff" viewing someone else -> limited operational fields
+ *  - Anyone else viewing someone else -> minimal public-safe fields
+ *
+ * NOTE: `password` never appears here regardless, since the schema
+ * has `select: false` and none of these queries re-select it.
+ */
 const shapeUserResponse = (user: TUser, requester: TRequester) => {
   const isOwner = String(user._id) === requester.id;
 
@@ -162,6 +226,7 @@ const shapeUserResponse = (user: TUser, requester: TRequester) => {
 
 export const UserServices = {
   createUserIntoDB,
+  findOrCreateGuestUserIntoDB,
   getAllUsersFromDB,
   getMyProfileFromDB,
   getSingleUserFromDB,

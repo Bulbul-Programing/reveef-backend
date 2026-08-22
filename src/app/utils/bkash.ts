@@ -1,154 +1,122 @@
-
-import httpStatus from "http-status"; // swap for your status-code source if different
-import { envVars } from "../envConfig/index.ts";
 import axios from "axios";
 import AppError from "../error/AppError.ts";
+import { envVars } from "../envConfig/index.ts";
 
-const BKASH_BASE_URL = envVars.BKASH_BASE_URL as string;
+const BKASH_BASE_URL = process.env.BKASH_BASE_URL as string; // e.g. https://tokenized.sandbox.bka.sh/v1.2.0-beta
+const BKASH_USERNAME = process.env.BKASH_USERNAME as string;
+const BKASH_PASSWORD = process.env.BKASH_PASSWORD as string;
+const BKASH_APP_KEY = process.env.BKASH_APP_KEY as string;
+const BKASH_APP_SECRET = process.env.BKASH_APP_SECRET as string;
+const BKASH_CALLBACK_URL = process.env.BKASH_CALLBACK_URL as string;
 
-type TBkashToken = {
-  id_token: string;
-  expiresAt: number; // epoch ms
-};
+let cachedToken: { idToken: string; expiresAt: number } | null = null;
 
-let cachedToken: TBkashToken | null = null;
-
+/**
+ * bKash id_tokens are short-lived (~1hr). Cached in memory and re-granted
+ * only when close to expiry, instead of on every single payment call.
+ */
 const grantToken = async (): Promise<string> => {
-  if (cachedToken && cachedToken.expiresAt > Date.now() + 30_000) {
-    return cachedToken.id_token;
+  if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
+    return cachedToken.idToken;
   }
 
   const { data } = await axios.post(
     `${BKASH_BASE_URL}/tokenized/checkout/token/grant`,
     {
-      app_key: envVars.BKASH_APP_KEY,
-      app_secret: envVars.BKASH_APP_SECRET,
+      app_key: BKASH_APP_KEY,
+      app_secret: BKASH_APP_SECRET,
     },
     {
       headers: {
-        username: envVars.BKASH_USERNAME,
-        password: envVars.BKASH_PASSWORD,
+        username: BKASH_USERNAME,
+        password: BKASH_PASSWORD,
         "Content-Type": "application/json",
+        Accept: "application/json",
       },
     }
   );
 
   if (!data?.id_token) {
-    throw new AppError(
-      httpStatus.BAD_GATEWAY,
-      "Failed to authenticate with bKash"
-    );
+    throw new AppError(502, "Failed to authenticate with bKash");
   }
 
-  // bKash tokens are typically valid ~1 hour; refresh a bit early
   cachedToken = {
-    id_token: data.id_token,
-    expiresAt: Date.now() + 55 * 60 * 1000,
+    idToken: data.id_token,
+    expiresAt: Date.now() + Number(data.expires_in ?? 3600) * 1000,
   };
 
-  return cachedToken.id_token;
+  return cachedToken.idToken;
 };
 
 const authHeaders = async () => {
   const idToken = await grantToken();
   return {
     Authorization: idToken,
-    "X-App-Key": envVars.BKASH_APP_KEY,
+    "X-App-Key": BKASH_APP_KEY,
     "Content-Type": "application/json",
     Accept: "application/json",
   };
 };
 
-const createPayment = async (payload: {
+const createPayment = async (params: {
   amount: number;
   orderNumber: string;
   payerReference: string;
 }) => {
+  
   const headers = await authHeaders();
-
   const { data } = await axios.post(
-    `${BKASH_BASE_URL}/tokenized/checkout/create`,
+    `${envVars.BKASH_BASE_URL}/tokenized/checkout/create`,
     {
       mode: "0011",
-      payerReference: payload.payerReference,
+      payerReference: params.payerReference,
       callbackURL: envVars.BKASH_CALLBACK_URL,
-      amount: payload.amount.toString(),
+      amount: params.amount.toFixed(2),
       currency: "BDT",
       intent: "sale",
-      merchantInvoiceNumber: payload.orderNumber,
+      merchantInvoiceNumber: params.orderNumber,
     },
     { headers }
   );
-
+  
   if (!data?.paymentID || !data?.bkashURL) {
-    throw new AppError(
-      httpStatus.BAD_GATEWAY,
-      data?.statusMessage || "Failed to initiate bKash payment"
-    );
+    throw new AppError(502, "Failed to create bKash payment");
   }
 
-  return data as {
-    paymentID: string;
-    bkashURL: string;
-    paymentCreateTime: string;
-  };
+  return data as { paymentID: string; bkashURL: string };
 };
 
 const executePayment = async (paymentID: string) => {
   const headers = await authHeaders();
 
   const { data } = await axios.post(
-    `${BKASH_BASE_URL}/tokenized/checkout/execute`,
+    `${envVars.BKASH_BASE_URL}/tokenized/checkout/execute`,
     { paymentID },
     { headers }
   );
 
   return data as {
+    transactionStatus: string;
     trxID?: string;
-    transactionStatus?: string;
+    paymentID: string;
     amount?: string;
-    paymentExecuteTime?: string;
-    statusCode?: string;
-    statusMessage?: string;
   };
 };
 
 const queryPayment = async (paymentID: string) => {
   const headers = await authHeaders();
+
   const { data } = await axios.post(
     `${BKASH_BASE_URL}/tokenized/checkout/payment/status`,
     { paymentID },
     { headers }
   );
+
   return data;
 };
 
-const refundPayment = async (payload: {
-  paymentID: string;
-  trxID: string;
-  amount: number;
-  reason: string;
-  sku: string;
-}) => {
-  const headers = await authHeaders();
-  const { data } = await axios.post(
-    `${BKASH_BASE_URL}/tokenized/checkout/payment/refund`,
-    {
-      paymentID: payload.paymentID,
-      trxID: payload.trxID,
-      amount: payload.amount.toString(),
-      reason: payload.reason,
-      sku: payload.sku,
-    },
-    { headers }
-  );
-  return data;
-};
-
-export const Bkash = {
-  grantToken,
+export const BkashService = {
   createPayment,
   executePayment,
   queryPayment,
-  refundPayment,
 };

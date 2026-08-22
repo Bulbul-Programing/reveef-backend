@@ -20,24 +20,48 @@ const orderSchema = new Schema<TOrder>(
             ref: "user",
             required: true,
         },
+
         orderNumber: {
             type: String,
             required: true,
             unique: true,
         },
+
         address: {
             type: Schema.Types.ObjectId,
             ref: "Address",
             required: true,
         },
-        subtotal: { type: Number, required: true, min: 0 },
-        discount: { type: Number, default: 0, min: 0 },
-        shippingCost: { type: Number, default: 0, min: 0 },
-        total: { type: Number, required: true, min: 0 },
+
+        subtotal: {
+            type: Number,
+            required: true,
+            min: 0,
+        },
+
+        discount: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
+        shippingCost: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
+        total: {
+            type: Number,
+            required: true,
+            min: 0,
+        },
+
         coupon: {
             type: Schema.Types.ObjectId,
-            ref: "Coupon",
+            ref: "coupon",
         },
+
         status: {
             type: String,
             enum: [
@@ -50,20 +74,31 @@ const orderSchema = new Schema<TOrder>(
             ],
             default: "pending",
         },
+
         paymentMethod: {
             type: String,
             enum: ["cod", "bkash", "nagad", "card"],
             default: "cod",
         },
+
         paymentStatus: {
             type: String,
             enum: ["pending", "paid", "failed", "refunded"],
             default: "pending",
         },
-        // bKash-specific tracking — only populated when paymentMethod === "bkash"
-        bkash: { type: bkashSchema, default: undefined },
+
+        bkashPaymentID: {
+            type: String,
+        },
+
+        bkashTrxID: {
+            type: String,
+        },
     },
-    { timestamps: true, versionKey: false }
+    {
+        timestamps: true,
+        versionKey: false,
+    }
 );
 
 export const orderModel = model<TOrder>("Order", orderSchema)

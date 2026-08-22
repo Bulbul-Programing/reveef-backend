@@ -5,7 +5,14 @@ import type { TAddress } from "./address.interface.ts";
 import { addressModel } from "./address.model.ts";
 
 
-const addressSearchableFields = ["fullName", "phone", "city", "area", "postalCode"];
+const addressSearchableFields = [
+  "fullName",
+  "phoneNumber",
+  "address",
+  "district",
+  "upazila",
+  "postalCode",
+];
 
 const createAddressIntoDB = async (
   userId: string,
@@ -31,6 +38,34 @@ const createAddressIntoDB = async (
   });
 
   return result;
+};
+
+/**
+ * Guest-checkout address resolution: if this user already has an address
+ * with the same phoneNumber + district + upazila, reuse it as-is (no
+ * updates to fullName/address/postalCode even if slightly different —
+ * treat the (phone, district, upazila) triple as the identity of "this
+ * delivery location"). Any of those three differing creates a new address
+ * record instead of overwriting, so past orders keep pointing at the
+ * address they actually shipped to.
+ */
+const findOrCreateAddressIntoDB = async (
+  userId: string,
+  payload: Omit<TAddress, "user" | "isDefault"> & { isDefault?: boolean }
+) => {
+  const existing = await addressModel.findOne({
+    user: userId,
+    phoneNumber: payload.phoneNumber,
+    district: payload.district,
+    upazila: payload.upazila,
+    address : payload.address
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return createAddressIntoDB(userId, payload);
 };
 
 /**
@@ -152,6 +187,7 @@ const deleteAddressFromDB = async (addressId: string, userId: string) => {
 
 export const AddressServices = {
   createAddressIntoDB,
+  findOrCreateAddressIntoDB,
   getAddressesByUserFromDB,
   getSingleAddressFromDB,
   updateAddressIntoDB,
