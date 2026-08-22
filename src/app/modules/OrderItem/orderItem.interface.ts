@@ -1,7 +1,7 @@
-import type { ObjectId } from "mongoose";
+import type { ObjectId, Types } from "mongoose";
 
 export type TOrderItem = {
-  order: string;
+  order: Types.ObjectId;
   product: string;
   variant: string;
   productName: string;

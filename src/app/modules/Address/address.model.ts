@@ -5,7 +5,7 @@ const addressSchema = new mongoose.Schema<TAddress>(
     {
         user: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+            ref: "user",
             required: true,
         },
 
@@ -14,7 +14,7 @@ const addressSchema = new mongoose.Schema<TAddress>(
             required: true,
         },
 
-        phone: {
+        phoneNumber: {
             type: String,
             required: true,
         },
@@ -29,7 +29,10 @@ const addressSchema = new mongoose.Schema<TAddress>(
             required: true,
         },
 
-        upazila: String,
+        upazila: {
+            type: String,
+            required: true,
+        },
 
         postalCode: String,
 

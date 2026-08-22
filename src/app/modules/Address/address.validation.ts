@@ -6,7 +6,7 @@ const createAddressValidationSchema = z.object({
     // req.user.id in the controller, so nobody can create an address
     // "for" a different account by passing someone else's id.
     fullName: z.string({ message: "Full name is required" }).trim().min(1),
-    phone: z.string({ message: "Phone number is required" }).trim().min(6),
+    phoneNumber: z.string({ message: "Phone number is required" }).trim().min(6),
     address: z
       .string({ message: "Address line is required" })
       .trim()
@@ -22,7 +22,7 @@ const updateAddressValidationSchema = z.object({
   body: z
     .object({
       fullName: z.string().trim().min(1).optional(),
-      phone: z.string().trim().min(6).optional(),
+      phoneNumber: z.string().trim().min(6).optional(),
       address: z.string().trim().min(1).optional(),
       district: z.string().trim().min(1).optional(),
       upazila: z.string().trim().optional(),

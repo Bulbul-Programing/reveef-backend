@@ -18,6 +18,12 @@ interface EnvConfig {
     // FRONTEND_URL: string
     STRIPE_SECRET_KEY: string
     STRIPE_WEBHOOK_SECRET: string
+    BKASH_BASE_URL: string
+    BKASH_APP_KEY: string
+    BKASH_APP_SECRET: string
+    BKASH_USERNAME: string
+    BKASH_PASSWORD: string
+    BKASH_CALLBACK_URL: string
 }
 
 const localEnvVariables = (): EnvConfig => {
@@ -36,7 +42,13 @@ const localEnvVariables = (): EnvConfig => {
         'EXPRESS_SESSION_SECRET',
         // 'FRONTEND_URL',
         'STRIPE_SECRET_KEY',
-        'STRIPE_WEBHOOK_SECRET'
+        'STRIPE_WEBHOOK_SECRET',
+        'BKASH_BASE_URL',
+        'BKASH_APP_KEY',
+        'BKASH_APP_SECRET',
+        'BKASH_USERNAME',
+        'BKASH_PASSWORD',
+        'BKASH_CALLBACK_URL',
     ]
 
     requiredEnvVariables.forEach(envVar => {
@@ -60,7 +72,13 @@ const localEnvVariables = (): EnvConfig => {
         EXPRESS_SESSION_SECRET: process.env.EXPRESS_SESSION_SECRET as string,
         // FRONTEND_URL: process.env.FRONTEND_URL as string,
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
-        STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET as string
+        STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET as string,
+        BKASH_BASE_URL: process.env.BKASH_BASE_URL as string,
+        BKASH_APP_KEY: process.env.BKASH_APP_KEY as string,
+        BKASH_APP_SECRET: process.env.BKASH_APP_SECRET as string,
+        BKASH_USERNAME: process.env.BKASH_USERNAME as string,
+        BKASH_PASSWORD: process.env.BKASH_PASSWORD as string,
+        BKASH_CALLBACK_URL: process.env.BKASH_CALLBACK_URL as string
     }
 }
 
