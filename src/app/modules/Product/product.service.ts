@@ -10,21 +10,22 @@ import { productImageModel } from "../ProductImage/productImage.model.ts";
 import { productVariantModel } from "../ProductVariant/productVariant.model.ts";
 import type { TUserRole } from "../User/user.interface.ts";
 import QueryBuilder from "../../builder/QueryBuilder.ts";
+import { ReviewServices } from "../Review/review.service.ts";
 
 const productSearchableFields = ["name", "description"];
-
+ 
 const generateSlug = (name: string) =>
   name
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
-
+ 
 const ensureUniqueSlug = async (baseSlug: string, excludeId?: string) => {
   let slug = baseSlug;
   let suffix = 1;
-
-  for (; ;) {
+ 
+  for (;;) {
     const existing = await productModel.findOne({
       slug,
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
@@ -33,7 +34,7 @@ const ensureUniqueSlug = async (baseSlug: string, excludeId?: string) => {
     slug = `${baseSlug}-${suffix++}`;
   }
 };
-
+ 
 const validateReferences = async (
   categoryId: Types.ObjectId | string,
   collectionIds?: (Types.ObjectId | string)[]
@@ -42,7 +43,7 @@ const validateReferences = async (
   if (!category) {
     throw new AppError(404, "Category not found");
   }
-
+ 
   if (collectionIds?.length) {
     const count = await collectionModel.countDocuments({
       _id: { $in: collectionIds },
@@ -52,30 +53,34 @@ const validateReferences = async (
     }
   }
 };
-
+ 
 const createProductIntoDB = async (payload: TProduct) => {
   await validateReferences(payload.category, payload.collections);
-
+ 
   if (
     payload.discountPrice !== undefined &&
     payload.discountPrice >= payload.basePrice
   ) {
     throw new AppError(400, "Discount price must be less than base price");
   }
-
+ 
   const baseSlug = generateSlug(payload.slug || payload.name);
   const slug = await ensureUniqueSlug(baseSlug);
-
+ 
   const result = await productModel.create({ ...payload, slug });
   return result;
 };
-
-const generateVariantSku = (productId: string, size: string, colorName: string) =>
+ 
+const generateVariantSku = (
+  productId: string,
+  size: string,
+  colorName: string
+) =>
   `${productId.slice(-6)}-${size}-${colorName}`
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
-
+ 
 type TCreateProductWithDetailsPayload = TProduct & {
   images?: Pick<TProductImage, "url" | "alt" | "sortOrder">[];
   variants: Omit<
@@ -83,7 +88,7 @@ type TCreateProductWithDetailsPayload = TProduct & {
     "_id" | "product" | "createdAt" | "updatedAt"
   >[];
 };
-
+ 
 /**
  * One admin form submit -> Product + its ProductImages + its ProductVariants,
  * created atomically in a single transaction. If anything fails (a bad
@@ -99,28 +104,28 @@ const createProductWithDetailsIntoDB = async (
   payload: TCreateProductWithDetailsPayload
 ) => {
   const { images = [], variants, ...productData } = payload;
-
+ 
   await validateReferences(productData.category, productData.collections);
-
+ 
   if (
     productData.discountPrice !== undefined &&
     productData.discountPrice >= productData.basePrice
   ) {
     throw new AppError(400, "Discount price must be less than base price");
   }
-
+ 
   const baseSlug = generateSlug(productData.slug || productData.name);
   const slug = await ensureUniqueSlug(baseSlug);
-
+ 
   const session = await mongoose.startSession();
-
+ 
   try {
     session.startTransaction();
-
+ 
     const [product] = await productModel.create([{ ...productData, slug }], {
       session,
     });
-
+ 
     let createdImages: unknown[] = [];
     if (images.length) {
       createdImages = await productImageModel.insertMany(
@@ -132,7 +137,7 @@ const createProductWithDetailsIntoDB = async (
         { session }
       );
     }
-
+ 
     // Duplicate SKUs are caught by the unique index on `sku` — that throw
     // aborts the transaction below, and your existing handleDupleacteError
     // formats the response, so no manual pre-check is needed here.
@@ -150,9 +155,9 @@ const createProductWithDetailsIntoDB = async (
       })),
       { session }
     );
-
+ 
     await session.commitTransaction();
-
+ 
     return {
       ...product.toObject(),
       images: createdImages,
@@ -165,7 +170,7 @@ const createProductWithDetailsIntoDB = async (
     session.endSession();
   }
 };
-
+ 
 /**
  * requesterRole is only populated when checkAuth has run (admin/stuff
  * management routes). Public storefront calls this without a role, so
@@ -177,13 +182,12 @@ const getAllProductsFromDB = async (
 ) => {
   const canSeeInactive = requesterRole === "admin" || requesterRole === "stuff";
   const baseFilter = canSeeInactive ? {} : { isActive: true };
-
+ 
   const productQuery = new QueryBuilder(
     productModel
       .find(baseFilter)
       .populate("category", "name slug")
-      .populate("collections", "name slug")
-      .populate("images", "url alt sortOrder"),
+      .populate("collections", "name slug"),
     query
   )
     .search(productSearchableFields)
@@ -192,13 +196,13 @@ const getAllProductsFromDB = async (
     .sort()
     .paginate()
     .fields();
-
+ 
   const result = await productQuery.modelQuery;
   const meta = await productQuery.countTotal();
-
+ 
   return { meta, result };
 };
-
+ 
 /**
  * Product detail also pulls in its variants (size/color/price/stock),
  * since a product detail page needs those to render buy options.
@@ -209,37 +213,36 @@ const getSingleProductFromDB = async (
 ) => {
   const canSeeInactive = requesterRole === "admin" || requesterRole === "stuff";
   const isObjectId = Types.ObjectId.isValid(idOrSlug);
-
+ 
   const product = await productModel
     .findOne(isObjectId ? { _id: idOrSlug } : { slug: idOrSlug })
     .populate("category", "name slug")
-    .populate("collections", "name slug")
-    // .populate("images", "url");
-
+    .populate("collections", "name slug");
+ 
   if (!product || (!canSeeInactive && !product.isActive)) {
     throw new AppError(404, "Product not found");
   }
-
+ 
   const variantFilter: Record<string, unknown> = { product: product._id };
   if (!canSeeInactive) {
     variantFilter.isActive = true;
   }
-
+ 
   const variants = await productVariantModel
     .find(variantFilter)
-    .sort({ price: 1 })
-    .select("color sku size price stock image")
-    ;
-
+    .sort({ price: 1 });
+ 
   const images = await productImageModel
     .find({ product: product._id })
-    .sort({ sortOrder: 1 })
-    .select("url alt sortOrder")
-    ;
-
-  return { ...product.toObject(), variants, images };
+    .sort({ sortOrder: 1 });
+ 
+  const ratingSummary = await ReviewServices.getProductRatingSummary(
+    String(product._id)
+  );
+ 
+  return { ...product.toObject(), variants, images, ratingSummary };
 };
-
+ 
 const updateProductIntoDB = async (
   targetId: string,
   payload: Partial<TProduct>
@@ -248,57 +251,61 @@ const updateProductIntoDB = async (
   if (!product) {
     throw new AppError(404, "Product not found");
   }
-
+ 
   if (payload.category || payload.collections) {
     await validateReferences(
       payload.category ?? product.category,
       payload.collections
     );
   }
-
+ 
   const nextBasePrice = payload.basePrice ?? product.basePrice;
   const nextDiscountPrice =
     payload.discountPrice !== undefined
       ? payload.discountPrice
       : product.discountPrice;
-
+ 
   if (nextDiscountPrice !== undefined && nextDiscountPrice >= nextBasePrice) {
     throw new AppError(400, "Discount price must be less than base price");
   }
-
+ 
   if (payload.name || payload.slug) {
     const baseSlug = generateSlug(
       payload.slug || payload.name || product.name
     );
     payload.slug = await ensureUniqueSlug(baseSlug, targetId);
   }
-
+ 
   const result = await productModel.findByIdAndUpdate(targetId, payload, {
     new: true,
     runValidators: true,
   });
-
+ 
   return result;
 };
-
-
+ 
+/**
+ * Deactivating a product cascades to its variants, so the storefront
+ * variant listing (which already filters on variant.isActive) stops
+ * surfacing them too, without needing an extra join on every read.
+ */
 const deactivateProductIntoDB = async (targetId: string) => {
   const product = await productModel.findById(targetId);
   if (!product) {
     throw new AppError(404, "Product not found");
   }
-
+ 
   const result = await productModel.findByIdAndUpdate(
     targetId,
     { isActive: false },
-    { returnDocument: 'after' }
+    { new: true }
   );
-
+ 
   await productVariantModel.updateMany(
     { product: targetId },
     { isActive: false }
   );
-
+ 
   return result;
 };
 

@@ -14,3 +14,9 @@ export type TCoupon = {
   createdAt?: Date;
   updatedAt?: Date;
 };
+
+
+export type TVerifyCouponInput = {
+  code: string;
+  cartSubtotal: number;
+};

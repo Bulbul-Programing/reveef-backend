@@ -1,11 +1,12 @@
-import type { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 
-export type TReview = {
-  user: ObjectId;
-  product: ObjectId;
+export interface TReview {
+  _id?: Types.ObjectId;
+  user: Types.ObjectId;
+  product: Types.ObjectId;
   rating: number;
   comment?: string;
-  isApproved?: boolean;
+  isApproved: boolean;
   createdAt?: Date;
   updatedAt?: Date;
-};
+}
