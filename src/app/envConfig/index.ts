@@ -93,7 +93,7 @@ const localEnvVariables = (): EnvConfig => {
         EMAIL_PASSWORD: process.env.EMAIL_PASSWORD as string,
         FRONTEND_URL: process.env.FRONTEND_URL as string,
         RESET_PASSWORD_SECRETE: process.env.RESET_PASSWORD_SECRETE as string,
-        RESET_PASSWORD_EXPIRE: process.env.RESET_PASSWORD_SECRETE as string
+        RESET_PASSWORD_EXPIRE: process.env.RESET_PASSWORD_EXPIRE as string
     }
 }
 

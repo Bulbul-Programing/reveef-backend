@@ -4,7 +4,7 @@ import { ReviewServices } from "./review.service.ts";
 import { sendResponse } from "../../utils/sendResponse.ts";
 
 const createReview = catchAsync(async (req: Request, res: Response) => {
-  console.log(req.user);
+  
   const result = await ReviewServices.createReviewIntoDB(
     req.user.id,
     req.body

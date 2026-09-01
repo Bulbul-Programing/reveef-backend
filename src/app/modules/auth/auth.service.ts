@@ -474,7 +474,7 @@ const resetPassword = async (payload: {
   }
 
   const verifiedToken = verifyToken(payload.token, envVars.RESET_PASSWORD_SECRETE) as JwtPayload
-
+ 
   const hashedPassword = await bcrypt.hash(
     payload.newPassword,
     Number(envVars.BCRYPT_ROUNDS)
@@ -486,7 +486,7 @@ const resetPassword = async (payload: {
       password: hashedPassword
     }
   )
-
+  
   return null;
 };
 

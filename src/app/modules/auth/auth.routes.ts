@@ -8,7 +8,7 @@ const router = express.Router()
 router.post('/login', validateRequest(loginValidation.loginValidationSchema), loginController.loginUser)
 router.get('/userData/:email', loginController.getUserData)
 router.post("/forgot-password", loginController.forgotPassword);
-router.post("/accessToken", loginController.getAccessTokenByRefreshToken);
+router.get("/accessToken", loginController.getAccessTokenByRefreshToken);
 router.post("/resetPassword", loginController.resetPassword);
 
 export const loginRoute = router
