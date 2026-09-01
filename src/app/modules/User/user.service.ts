@@ -45,11 +45,11 @@ const findOrCreateGuestUserIntoDB = async (payload: {
   name: string;
   phoneNumber: string;
 }) => {
-  
+
   const existingUser = await userModel.findOne({
     phoneNumber: payload.phoneNumber,
   });
-  
+
   if (existingUser) {
     return existingUser;
   }
@@ -70,6 +70,7 @@ const findOrCreateGuestUserIntoDB = async (payload: {
     phoneNumber: payload.phoneNumber,
     password: hashedPassword,
     role: "customer",
+    needPasswordChange: true,
     isActive: true,
   });
 

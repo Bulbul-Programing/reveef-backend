@@ -10,6 +10,7 @@ export type TProduct = {
     discountPrice?: number;
     isFeatured?: boolean;
     isActive?: boolean;
+    isDeleted?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 };

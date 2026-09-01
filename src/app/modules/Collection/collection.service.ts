@@ -4,6 +4,7 @@ import type { TCollection } from "./collection.interface.ts";
 import type { TUserRole } from "../User/user.interface.ts";
 import QueryBuilder from "../../builder/QueryBuilder.ts";
 import AppError from "../../error/AppError.ts";
+import { productModel } from "../Product/product.model.ts";
 
 const collectionSearchableFields = ["name", "description"];
 
@@ -114,8 +115,8 @@ const deleteCollectionFromDB = async (targetId: string) => {
 
   // TODO: once Product references a collection, guard against deleting
   // one that's still in use, e.g.:
-  // const isUsedByProducts = await productModel.exists({ collection: targetId });
-  // if (isUsedByProducts) throw new AppError(400, "Collection is in use by products");
+  const isUsedByProducts = await productModel.exists({ collection: targetId });
+  if (isUsedByProducts) throw new AppError(400, "Collection is in use by products");
 
   const result = await collectionModel.findByIdAndDelete(targetId);
   return result;

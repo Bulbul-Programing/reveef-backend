@@ -6,11 +6,12 @@ const categorySchema = new mongoose.Schema<TCategory>({
     slug: { type: String, required: true, unique: true },
     description: String,
     parent: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
-    imageUrl: {type: String},
-    isActive: { type: Boolean, default: true }
+    imageUrl: { type: String },
+    isActive: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false }
 }, {
     timestamps: true,
-    versionKey : false
+    versionKey: false
 });
 
 export const categoryModel = model<TCategory>('Category', categorySchema);

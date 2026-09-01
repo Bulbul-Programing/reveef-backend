@@ -5,6 +5,7 @@ export type TCategory = {
     parent?: string;
     imageUrl?: string;
     isActive?: boolean;
+    isDeleted?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 };

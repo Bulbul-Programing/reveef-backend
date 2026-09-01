@@ -14,10 +14,7 @@ import { couponModel } from "../Coupon/coupon.model.ts";
 
 const orderSearchableFields = ["orderNumber"];
 
-const DEFAULT_SHIPPING_COST = 60;
-// TODO: replace with real shipping-rate logic (e.g. by district — inside
-// vs outside Dhaka is a common split) once that business rule is defined.
-// This is a placeholder flat rate.
+const DEFAULT_SHIPPING_COST = 120;
 
 const generateOrderNumber = async () => {
   const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -220,7 +217,7 @@ const guestCheckoutIntoDB = async (payload: TGuestCheckoutPayload) => {
       }
     }
 
-    const shippingCost = DEFAULT_SHIPPING_COST;
+    const shippingCost = payload.address.district.toLocaleLowerCase() === "dhaka" ? 70 : DEFAULT_SHIPPING_COST;
     const total = subtotal - discount + shippingCost;
     const orderNumber = await generateOrderNumber();
 

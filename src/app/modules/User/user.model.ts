@@ -43,8 +43,12 @@ const userSchema = new mongoose.Schema<TUser>(
             type: Boolean,
             default: true,
         },
+        needPasswordChange: {
+            type: Boolean,
+            default: true,
+        }
     },
-    { timestamps: true, versionKey : false }
+    { timestamps: true, versionKey: false }
 );
 
 export const userModel = model<TUser>('user', userSchema)

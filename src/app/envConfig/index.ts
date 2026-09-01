@@ -24,6 +24,11 @@ interface EnvConfig {
     BKASH_USERNAME: string
     BKASH_PASSWORD: string
     BKASH_CALLBACK_URL: string
+    EMAIL_PASSWORD: string
+    EMAIL_USER: string
+    FRONTEND_URL: string
+    RESET_PASSWORD_SECRETE: string
+    RESET_PASSWORD_EXPIRE: string
 }
 
 const localEnvVariables = (): EnvConfig => {
@@ -49,6 +54,11 @@ const localEnvVariables = (): EnvConfig => {
         'BKASH_USERNAME',
         'BKASH_PASSWORD',
         'BKASH_CALLBACK_URL',
+        "EMAIL_PASSWORD",
+        "EMAIL_USER",
+        "FRONTEND_URL",
+        "RESET_PASSWORD_SECRETE",
+        "RESET_PASSWORD_EXPIRE"
     ]
 
     requiredEnvVariables.forEach(envVar => {
@@ -78,7 +88,12 @@ const localEnvVariables = (): EnvConfig => {
         BKASH_APP_SECRET: process.env.BKASH_APP_SECRET as string,
         BKASH_USERNAME: process.env.BKASH_USERNAME as string,
         BKASH_PASSWORD: process.env.BKASH_PASSWORD as string,
-        BKASH_CALLBACK_URL: process.env.BKASH_CALLBACK_URL as string
+        BKASH_CALLBACK_URL: process.env.BKASH_CALLBACK_URL as string,
+        EMAIL_USER: process.env.EMAIL_USER as string,
+        EMAIL_PASSWORD: process.env.EMAIL_PASSWORD as string,
+        FRONTEND_URL: process.env.FRONTEND_URL as string,
+        RESET_PASSWORD_SECRETE: process.env.RESET_PASSWORD_SECRETE as string,
+        RESET_PASSWORD_EXPIRE: process.env.RESET_PASSWORD_SECRETE as string
     }
 }
 
