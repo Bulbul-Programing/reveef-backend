@@ -5,9 +5,10 @@ import { setupGracefulShutdown } from "./app/middleware/shutdown.js";
 import mongoose from "mongoose";
 
 let server: Server
+
 async function mainFunction() {
     try {
-         await mongoose.connect(envVars.DATABASE_URL as string);
+        await mongoose.connect(envVars.DATABASE_URL as string);
         server = app.listen(envVars.PORT, () => {
             console.log(`🚀 Server is running on http://localhost:${envVars.PORT}`);
         })
