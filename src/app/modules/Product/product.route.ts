@@ -9,6 +9,7 @@ const router = Router();
 // Public storefront routes — active products only, no auth required
 // Supports ?category=<id>, ?collections=<id1>,<id2>, ?minPrice, ?maxPrice, ?searchTerm
 router.get("/", ProductControllers.getAllProducts);
+router.get("/admin", checkAuth("admin", "stuff"), ProductControllers.getAllProducts);
 router.get("/:id", ProductControllers.getSingleProduct);
 
 // Admin / stuff management routes
@@ -24,7 +25,7 @@ router.post(
 router.patch(
     "/:id",
     checkAuth("admin", "stuff"),
-    validateRequest(ProductValidation.updateProductValidationSchema),
+    validateRequest(ProductValidation.updateProductWithDetailsValidationSchema),
     ProductControllers.updateProduct
 );
 

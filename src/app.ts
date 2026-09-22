@@ -14,8 +14,8 @@ app.use(cors({ origin: ["http://localhost:3000"] }))
 
 app.use(express.json());
 
-app.use(generalRateLimiter);
-app.use("/api/v1/auth", authRateLimiter);
+// app.use(generalRateLimiter);
+// app.use("/api/v1/auth", authRateLimiter);
 app.get("/api/test", (req, res) => {
     res.json({ message: "OK" });
 });

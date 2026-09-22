@@ -34,7 +34,7 @@ class QueryBuilder<T> {
 
     const excludeFields: string[] = [
       "searchTerm",
-      "sort",
+      "sortBy",
       "limit",
       "page",
       "fields",
@@ -80,8 +80,10 @@ class QueryBuilder<T> {
 
   sort() {
     const sortBy =
-      (this.query.sort as string)?.split(",").join(" ") || "-createdAt";
+      (this.query.sortBy as string)?.split(",").join(" ") || "-createdAt";
+
     this.modelQuery = this.modelQuery.sort(sortBy);
+
     return this;
   }
 

@@ -55,6 +55,10 @@ const couponSchema = new mongoose.Schema<TCoupon>(
             type: Boolean,
             default: true,
         },
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true, versionKey: false }
 );

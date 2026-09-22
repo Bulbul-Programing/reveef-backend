@@ -27,13 +27,14 @@ const createCoupon = z.object({
     })
     .refine(
       (data) =>
-        data.type !== "percentage" ||
-        data.value <= 100, // percentage discount can't exceed 100%
+        data.type !== "fixed" ||
+        data.maximumDiscount === undefined,
       {
-        message: "Percentage value cannot exceed 100",
-        path: ["value"],
+        message:
+          "Maximum discount is only applicable to percentage coupons",
+        path: ["maximumDiscount"],
       }
-    ),
+    )
 });
 
 const updateCoupon = z.object({

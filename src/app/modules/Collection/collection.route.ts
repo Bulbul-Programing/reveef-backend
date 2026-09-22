@@ -7,6 +7,7 @@ const router = Router();
 
 // Public storefront routes — active collections only, no auth required
 router.get("/", CollectionControllers.getAllCollections);
+router.get("/admin", checkAuth("admin", "stuff"), CollectionControllers.getAllCollections);
 router.get("/:id", CollectionControllers.getSingleCollection);
 
 // Admin / stuff management routes

@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema<TUser>(
             type: String,
             sparse: true,
             lowercase: true,
+            unique: true,
             trim: true,
         },
 
@@ -30,6 +31,7 @@ const userSchema = new mongoose.Schema<TUser>(
         phoneNumber: {
             type: String,
             trim: true,
+            unique: true,
             required: true,
         },
 
@@ -45,7 +47,7 @@ const userSchema = new mongoose.Schema<TUser>(
         },
         needPasswordChange: {
             type: Boolean,
-            default: true,
+            default: false,
         }
     },
     { timestamps: true, versionKey: false }

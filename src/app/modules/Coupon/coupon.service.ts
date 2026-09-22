@@ -18,7 +18,7 @@ const createCouponIntoDB = async (payload: Partial<TCoupon>) => {
 
 // ── Get all (staff/admin only — full list) ────────────────────────
 const getAllCouponsFromDB = async (query: Record<string, unknown>) => {
-    const couponQuery = new QueryBuilder(couponModel.find(), query)
+    const couponQuery = new QueryBuilder(couponModel.find({ isDeleted: false }), query)
         .search(["code"])
         .filter()
         .sort()
@@ -64,11 +64,27 @@ const updateCouponIntoDB = async (id: string, payload: Partial<TCoupon>) => {
 
 // ── Delete (admin only, enforced in route) ────────────────────────
 const deleteCouponFromDB = async (id: string) => {
-    const coupon = await couponModel.findByIdAndDelete(id);
+    const coupon = await couponModel.findById(id);
+
     if (!coupon) {
-        throw new AppError(httpStatus.NOT_FOUND, "Coupon not found");
+        throw new AppError(404, "Product not found");
     }
-    return coupon;
+
+    if (coupon.isDeleted) {
+        throw new AppError(400, "Product is already deleted");
+    }
+
+    const result = await couponModel.findByIdAndUpdate(
+        id,
+        {
+            isDeleted: true,
+            isActive: false,
+        },
+        {
+            new: true,
+        }
+    );
+    result
 };
 
 // ── Verify a single coupon by code (all roles — user's checkout flow) ──
@@ -108,8 +124,8 @@ const verifyCouponFromDB = async (payload: TVerifyCouponInput) => {
     }
 
     let discount = coupon.type === "percentage"
-            ? (payload.cartSubtotal * coupon.value) / 100
-            : coupon.value;
+        ? (payload.cartSubtotal * coupon.value) / 100
+        : coupon.value;
 
     if (coupon.type === "percentage" && typeof coupon.maximumDiscount === "number") {
         discount = Math.min(discount, coupon.maximumDiscount);

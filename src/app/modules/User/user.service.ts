@@ -8,7 +8,12 @@ import QueryBuilder from "../../builder/QueryBuilder.ts";
 const userSearchableFields = ["name", "email", "phoneNumber"];
 
 const createUserIntoDB = async (payload: TUser) => {
-  const existingUser = await userModel.findOne({ email: payload.email });
+  const existingUser = await userModel.findOne({
+    $or: [
+      { email: payload.email },
+      { phoneNumber: payload.phoneNumber },
+    ],
+  });
   if (existingUser) {
     throw new AppError(400, "This email is already registered");
   }
@@ -20,6 +25,31 @@ const createUserIntoDB = async (payload: TUser) => {
     ...payload,
     password: hashedPassword,
     role: "customer" as TUserRole,
+    isActive: true,
+  };
+
+  const result = await userModel.create(userData);
+  return result;
+};
+
+const createAdminIntoDB = async (payload: TUser) => {
+  const existingUser = await userModel.findOne({
+    $or: [
+      { email: payload.email },
+      { phoneNumber: payload.phoneNumber },
+    ],
+  });
+  if (existingUser) {
+    throw new AppError(400, "This email Or phone number is already registered");
+  }
+
+  const hashedPassword = await bcrypt.hash(payload.password, 10);
+
+  // Public registration can never set its own role or isActive.
+  const userData = {
+    ...payload,
+    password: hashedPassword,
+    role: "admin" as TUserRole,
     isActive: true,
   };
 
@@ -227,6 +257,7 @@ const shapeUserResponse = (user: TUser, requester: TRequester) => {
 
 export const UserServices = {
   createUserIntoDB,
+  createAdminIntoDB,
   findOrCreateGuestUserIntoDB,
   getAllUsersFromDB,
   getMyProfileFromDB,

@@ -1,10 +1,10 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Types, type ClientSession } from "mongoose";
 import { productModel } from "./product.model.ts";
 import { categoryModel } from "../Category/category.model.ts";
 import AppError from "../../error/AppError.ts";
 import { collectionModel } from "../Collection/collection.model.ts";
 
-import type { TProduct } from "./product.interface.ts";
+import type { TDetailProduct, TProduct } from "./product.interface.ts";
 import type { TProductImage } from "../ProductImage/productImage.interface.ts";
 import type { TProductVariant } from "../ProductVariant/productVariant.interface.ts";
 
@@ -29,7 +29,7 @@ const ensureUniqueSlug = async (baseSlug: string, excludeId?: string) => {
   let slug = baseSlug;
   let suffix = 1;
 
-  for (;;) {
+  for (; ;) {
     const existing = await productModel.findOne({
       slug,
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
@@ -194,17 +194,19 @@ const getAllProductsFromDB = async (
     requesterRole === "admin" || requesterRole === "stuff";
 
   const baseFilter = canManageProducts
-    ? {}
+    ? {isDeleted: false}
     : {
-        isActive: true,
-        isDeleted: false,
-      };
+      isActive: true,
+      isDeleted: false,
+    };
 
   const productQuery = new QueryBuilder(
     productModel
       .find(baseFilter)
       .populate("category", "name slug")
-      .populate("collections", "name slug"),
+      .populate("collections", "name slug")
+      .populate("images", "url alt sortOrder")
+      .populate("variants"),
     query
   )
     .search(productSearchableFields)
@@ -270,9 +272,140 @@ const getSingleProductFromDB = async (
   };
 };
 
+type TImageInput = { url: string; alt?: string; sortOrder?: number };
+
+type TVariantInput = {
+  _id?: string; // present for existing variants, absent for new ones
+  sku?: string;
+  size: string;
+  color: { name: string; hexCode?: string, color: string };
+  price: number;
+  stock?: number;
+  image?: string;
+  isActive?: boolean;
+};
+
+
+// Images are matched by url: keep, update alt/order, insert new, delete removed
+const syncProductImages = async (
+  productId: string,
+  images: TImageInput[],
+  session: ClientSession
+) => {
+  const existing = await productImageModel
+    .find({ product: productId })
+    .session(session);
+
+  const incomingUrls = new Set(images.map((img) => img.url));
+  const existingByUrl = new Map(existing.map((img) => [img.url, img]));
+
+  const removedIds = existing
+    .filter((img) => !incomingUrls.has(img.url))
+    .map((img) => img._id);
+
+  if (removedIds.length) {
+    await productImageModel.deleteMany({ _id: { $in: removedIds } }, { session });
+  }
+
+  const ops = images.map((img, index) => {
+    const sortOrder = img.sortOrder ?? index;
+    const found = existingByUrl.get(img.url);
+
+    return found
+      ? {
+        updateOne: {
+          filter: { _id: found._id },
+          update: { $set: { alt: img.alt ?? "", sortOrder } },
+        },
+      }
+      : {
+        insertOne: {
+          document: {
+            product: productId,
+            url: img.url,
+            alt: img.alt ?? "",
+            sortOrder,
+          },
+        },
+      };
+  });
+
+  if (ops.length) {
+    await productImageModel.bulkWrite(ops, { session });
+  }
+};
+
+// Variants are matched by _id: update existing, create new, delete removed
+const syncProductVariants = async (
+  product: { _id: Types.ObjectId; name: string },
+  variants: TVariantInput[],
+  session: ClientSession
+) => {
+  const existing = await productVariantModel
+    .find({ product: product._id })
+    .session(session);
+
+  const existingIds = new Set(existing.map((v) => String(v._id)));
+  const keptIds = new Set(
+    variants.filter((v) => v._id).map((v) => String(v._id))
+  );
+
+  // Guard: never touch a variant that belongs to another product
+  for (const v of variants) {
+    if (v._id && !existingIds.has(String(v._id))) {
+      throw new AppError(400, "A variant does not belong to this product");
+    }
+  }
+
+  // Variants removed in the form.
+  // NOTE: if orders/carts reference variant ids, soft-delete here instead
+  // (e.g. { isDeleted: true }) so old orders keep resolving.
+  const removedIds = existing
+    .filter((v) => !keptIds.has(String(v._id)))
+    .map((v) => v._id);
+
+  if (removedIds.length) {
+    await productVariantModel.deleteMany({ _id: { $in: removedIds } }, { session });
+  }
+
+  for (const v of variants) {
+    if (v._id) {
+      const { _id, image, sku, ...fields } = v;
+
+      await productVariantModel.updateOne(
+        { _id },
+        {
+          $set: {
+            ...fields,
+            ...(sku ? { sku } : {}),
+            ...(image ? { image } : {}),
+          },
+          // image removed in the form
+          ...(image ? {} : { $unset: { image: 1 } }),
+        },
+        { runValidators: true, session }
+      );
+    } else {
+      const { _id, ...fields } = v;
+
+      await productVariantModel.create(
+        [
+          {
+            ...fields,
+            product: product._id,
+            // use the same SKU generator as your create service
+            sku: fields.sku || generateVariantSku(product._id.toString(), v.size, v.color.name),
+          },
+        ],
+        { session }
+      );
+    }
+  }
+};
+
 const updateProductIntoDB = async (
   targetId: string,
-  payload: Partial<TProduct>
+  payload: Partial<TDetailProduct>
 ) => {
   const product = await productModel.findById(targetId);
 
@@ -280,47 +413,99 @@ const updateProductIntoDB = async (
     throw new AppError(404, "Product not found");
   }
 
-  if (payload.category || payload.collections) {
+  // images/variants live in their own collections, so split them off
+  const { images, variants, ...productFields } = payload;
+
+  delete (productFields as Record<string, unknown>).isDeleted;
+
+  if (variants && variants.length === 0) {
+    throw new AppError(400, "At least one variant is required");
+  }
+
+  /* ------------------------------- references ------------------------------ */
+
+
+  if (productFields.category || productFields.collections) {
     await validateReferences(
       payload.category ?? product.category,
-      payload.collections ?? product.collections
+      (payload.collections ?? product.collections)?.map((collection) =>
+        typeof collection === "object" && "_id" in collection
+          ? collection._id
+          : collection
+      )
     );
   }
 
-  const nextBasePrice = payload.basePrice ?? product.basePrice;
+  /* --------------------------------- pricing -------------------------------- */
+
+  const nextBasePrice = productFields.basePrice ?? product.basePrice;
 
   const nextDiscountPrice =
-    payload.discountPrice !== undefined
-      ? payload.discountPrice
-      : product.discountPrice;
+    productFields.discountPrice === undefined
+      ? product.discountPrice // not sent: keep current
+      : productFields.discountPrice === null
+        ? undefined // null: discount is being removed
+        : productFields.discountPrice;
 
-  if (
-    nextDiscountPrice !== undefined &&
-    nextDiscountPrice >= nextBasePrice
-  ) {
+  if (nextDiscountPrice !== undefined && nextDiscountPrice >= nextBasePrice) {
     throw new AppError(400, "Discount price must be less than base price");
   }
 
-  if (payload.name || payload.slug) {
-    const baseSlug = generateSlug(
-      payload.slug || payload.name || product.name
-    );
+  /* ---------------------------------- slug ---------------------------------- */
 
-    payload.slug = await ensureUniqueSlug(baseSlug, targetId);
+  // The form always sends name (and the current slug), so only regenerate the
+  // slug when it really changed. Otherwise every edit would change the URL.
+  const slugProvided = !!productFields.slug;
+  const slugChanged = slugProvided && productFields.slug !== product.slug;
+  const nameChanged =
+    productFields.name !== undefined && productFields.name !== product.name;
+
+  if (slugChanged || (!slugProvided && nameChanged)) {
+    const baseSlug = generateSlug(
+      productFields.slug || productFields.name || product.name
+    );
+    productFields.slug = await ensureUniqueSlug(baseSlug, targetId);
+  } else {
+    delete productFields.slug; // keep the existing slug
   }
 
-  delete payload.isDeleted;
+  /* ------------------------------ build update ------------------------------ */
 
-  const result = await productModel.findByIdAndUpdate(
-    targetId,
-    payload,
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  const { discountPrice, ...rest } = productFields;
 
-  return result;
+  const update: Record<string, unknown> = {
+    $set: {
+      ...rest,
+      ...(typeof discountPrice === "number" ? { discountPrice } : {}),
+    },
+  };
+
+  if (discountPrice === null) {
+    update.$unset = { discountPrice: 1 };
+  }
+
+  /* ------------------------ write everything atomically ---------------------- */
+
+  const session = await mongoose.startSession();
+
+  try {
+    let updated = null as typeof product | null;
+
+    await session.withTransaction(async () => {
+      updated = await productModel.findByIdAndUpdate(targetId, update, {
+        new: true,
+        runValidators: true,
+        session,
+      });
+
+      if (images) await syncProductImages(targetId, images, session);
+      if (variants) await syncProductVariants(product, variants, session);
+    });
+
+    return updated;
+  } finally {
+    await session.endSession();
+  }
 };
 
 const softDeleteProductIntoDB = async (targetId: string) => {
@@ -398,6 +583,7 @@ const deactivateProductIntoDB = async (targetId: string) => {
     targetId,
     {
       isActive: false,
+      isDeleted: true
     },
     {
       new: true,
@@ -406,7 +592,7 @@ const deactivateProductIntoDB = async (targetId: string) => {
 
   await productVariantModel.updateMany(
     { product: targetId },
-    { isActive: false }
+    { isActive: false, isDeleted: true }
   );
 
   return result;

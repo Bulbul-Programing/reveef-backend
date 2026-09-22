@@ -66,7 +66,13 @@ productSchema.virtual("images", {
     ref: "productImage",
     localField: "_id",
     foreignField: "product",
-})
+});
+
+productSchema.virtual("variants", {
+    ref: "ProductVariant",
+    localField: "_id",
+    foreignField: "product",
+});
 
 productSchema.set("toJSON", {
     virtuals: true,

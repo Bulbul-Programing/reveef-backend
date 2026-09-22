@@ -11,6 +11,7 @@ export type TCoupon = {
   startDate: Date;
   expiryDate: Date;
   isActive?: boolean;
+  isDeleted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 };

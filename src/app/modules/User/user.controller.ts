@@ -14,8 +14,19 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createAdmin = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.createAdminIntoDB(req.body);
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: "Admin registered successfully",
+    data: result,
+  });
+});
+
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const { result } = await UserServices.getAllUsersFromDB(req.query);
+  const result = await UserServices.getAllUsersFromDB(req.query);
 
   sendResponse(res, {
     statusCode: 200,
@@ -53,6 +64,7 @@ const getSingleUser = catchAsync(async (req: Request, res: Response) => {
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
   const userId = req.params.id as string
+  
   const result = await UserServices.updateUserIntoDB(userId, req.body, {
     id: req.user.id,
     role: req.user.role,
@@ -109,6 +121,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 
 export const UserControllers = {
   createUser,
+  createAdmin,
   getAllUsers,
   getMyProfile,
   getSingleUser,
