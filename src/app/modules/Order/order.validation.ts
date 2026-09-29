@@ -51,6 +51,53 @@ const checkoutValidationSchema = z.object({
     couponCode: z.string().trim().toUpperCase().optional(),
   }),
 });
+export type TUpdateOrderPayload = Partial<{
+  name: string;
+  phone: string;
+  address: string;
+  district: string;
+  upazila: string;
+  discount: number;
+  shippingCost: number;
+}>;
+const updateOrderInformation = z.object({
+  body: z.object({
+    name: z.string({ message: "Name is required" }).trim().min(1)
+      .optional(),
+    phoneNumber: z
+      .string({ message: "Phone number is required" })
+      .trim()
+      .min(6)
+      .optional(),
+    address: z
+      .string({ message: "Address is required" })
+      .trim()
+      .min(1)
+      .optional(),
+    district: z
+      .string({ message: "District is required" })
+      .trim()
+      .min(1)
+      .optional(),
+    upazila: z
+      .string({ message: "Upazila is required" })
+      .trim()
+      .min(1)
+      .optional(),
+    discount: z.number().optional(),
+    shippingCost: z.number().optional(),
+    status: z
+      .enum([
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ])
+      .optional(),
+  }),
+});
 
 const updateOrderStatusValidationSchema = z.object({
   body: z.object({
@@ -68,4 +115,5 @@ const updateOrderStatusValidationSchema = z.object({
 export const OrderValidation = {
   checkoutValidationSchema,
   updateOrderStatusValidationSchema,
+  updateOrderInformation
 };

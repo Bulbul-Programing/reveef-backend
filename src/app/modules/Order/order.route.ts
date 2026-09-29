@@ -49,4 +49,10 @@ router.patch(
     OrderControllers.cancelMyOrder
 );
 
+router.patch(
+    "/:id/update",
+    checkAuth("customer", "admin", "stuff"),
+    OrderControllers.updateOrderInformation
+);
+
 export const orderRouter = router;

@@ -12,6 +12,7 @@ import { reviewRouter } from '../modules/Review/review.route.ts';
 import { UserRoutes } from '../modules/User/user.route.ts';
 import { loginRoute } from '../modules/auth/auth.routes.ts';
 import { productRouter } from '../modules/Product/product.route.ts';
+import { dashboardRoutes } from '../modules/Dashboard/Dashboard.route.ts';
 
 type TModuleRoute = {
     path: string,
@@ -72,6 +73,10 @@ const moduleRoutes: TModuleRoute[] = [
     {
         path: '/review',
         route: reviewRouter
+    },
+    {
+        path: '/dashboard',
+        route: dashboardRoutes
     },
 ]
 

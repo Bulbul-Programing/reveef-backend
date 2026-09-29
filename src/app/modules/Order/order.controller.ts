@@ -74,7 +74,9 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
 const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
   const result = await OrderServices.updateOrderStatusIntoDB(
     req.params.id as string,
-    req.body.status
+    req.body.status,
+    req.user.id,
+    req.body?.note ? req.body.note : ""
   );
 
   sendResponse(res, {
@@ -136,6 +138,20 @@ const handleBkashCallback = catchAsync(async (req: Request, res: Response) => {
   );
 });
 
+const updateOrderInformation = catchAsync(async (req: Request, res: Response) => {
+  const result = await OrderServices.updateOrderIntoDB(
+    req.params.id as string,
+    req.body
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Order Information updated successfully",
+    data: result,
+  });
+});
+
 export const OrderControllers = {
   checkout,
   trackOrder,
@@ -146,4 +162,5 @@ export const OrderControllers = {
   cancelMyOrder,
   initiateBkashPayment,
   handleBkashCallback,
+  updateOrderInformation
 };

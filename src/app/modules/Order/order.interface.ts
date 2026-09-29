@@ -11,6 +11,15 @@ export type TOrderStatus =
 export type TPaymentMethod = "cod" | "bkash" | "nagad" | "card";
 export type TPaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
+type TStatusLog = {
+  changedBy: Types.ObjectId,
+  fromStatus: TOrderStatus
+  toStatus: TOrderStatus
+  note?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface TOrder {
   _id?: Types.ObjectId;
   user: Types.ObjectId;
@@ -22,6 +31,7 @@ export interface TOrder {
   total: number;
   coupon?: Types.ObjectId;
   status: TOrderStatus;
+  statusLog: TStatusLog[];
   paymentMethod: TPaymentMethod;
   paymentStatus: TPaymentStatus;
   bkashPaymentID?: string;
@@ -29,3 +39,15 @@ export interface TOrder {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+
+export type TUpdateOrderPayload = Partial<{
+  name: string;
+  phoneNumber: string;
+  address: string;
+  district: string;
+  upazila: string;
+  discount: number;
+  shippingCost: number;
+  status: TOrderStatus
+}>;

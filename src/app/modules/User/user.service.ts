@@ -103,13 +103,10 @@ const findOrCreateGuestUserIntoDB = async (payload: {
     needPasswordChange: true,
     isActive: true,
   });
-
-  const addPassword = {
-    ...newUser.toObject(),
-    password: randomPassword,
-  };
-
-  return addPassword;
+  
+  newUser.password = randomPassword
+  
+  return newUser;
 };
 
 const getAllUsersFromDB = async (query: Record<string, unknown>) => {

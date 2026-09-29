@@ -1,6 +1,8 @@
 import { model, Schema } from "mongoose";
 import type { TOrder } from "./order.interface.ts";
 
+const orderStatusEnum = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]
+
 const bkashSchema = new Schema(
     {
         paymentID: { type: String },
@@ -11,6 +13,33 @@ const bkashSchema = new Schema(
         paymentExecuteTime: { type: String },
     },
     { _id: false }
+);
+
+const ParcelStatusLogSchema = new Schema(
+    {
+        changedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "user",
+            required: true,
+        },
+
+        fromStatus: {
+            type: String,
+            enum: orderStatusEnum,
+        },
+
+        toStatus: {
+            type: String,
+            enum: orderStatusEnum,
+            required: true,
+        },
+
+        note: {
+            type: String,
+            trim: true,
+        },
+    },
+    { _id: false, timestamps: true }
 );
 
 const orderSchema = new Schema<TOrder>(
@@ -64,17 +93,13 @@ const orderSchema = new Schema<TOrder>(
 
         status: {
             type: String,
-            enum: [
-                "pending",
-                "confirmed",
-                "processing",
-                "shipped",
-                "delivered",
-                "cancelled",
-            ],
+            enum: orderStatusEnum,
             default: "pending",
         },
-
+        statusLog: {
+            type: [ParcelStatusLogSchema],
+            default: []
+        },
         paymentMethod: {
             type: String,
             enum: ["cod", "bkash", "nagad", "card"],

@@ -58,7 +58,7 @@ const findOrCreateAddressIntoDB = async (
     phoneNumber: payload.phoneNumber,
     district: payload.district,
     upazila: payload.upazila,
-    address : payload.address
+    address: payload.address
   });
 
   if (existing) {
@@ -78,12 +78,14 @@ const getAddressesByUserFromDB = async (
   userId: string,
   query: Record<string, unknown>
 ) => {
+  const g = await addressModel.find({ user: userId })
+  console.log(g);
   // Default address surfaces first, then most recently added.
   const queryWithDefaultSort = { sort: "-isDefault,-createdAt", ...query };
 
   const addressQuery = new QueryBuilder(
     addressModel.find({ user: userId }),
-    queryWithDefaultSort
+    query
   )
     .search(addressSearchableFields)
     .filter()
