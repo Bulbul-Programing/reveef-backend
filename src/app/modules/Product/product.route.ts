@@ -10,6 +10,7 @@ const router = Router();
 // Supports ?category=<id>, ?collections=<id1>,<id2>, ?minPrice, ?maxPrice, ?searchTerm
 router.get("/", ProductControllers.getAllProducts);
 router.get("/admin", checkAuth("admin", "stuff"), ProductControllers.getAllProducts);
+router.get("/popular/now", ProductControllers.getTopPopularProducts);
 router.get("/:id", ProductControllers.getSingleProduct);
 
 // Admin / stuff management routes

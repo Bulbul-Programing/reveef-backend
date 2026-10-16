@@ -44,6 +44,17 @@ const getAllProducts = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getTopPopularProducts = catchAsync(async (req: Request, res: Response) => {
+  const result = await ProductServices.getTopPopularProductsFromDB();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Products retrieved successfully",
+    data: result,
+  });
+});
+
 const getSingleProduct = catchAsync(async (req: Request, res: Response) => {
   const result = await ProductServices.getSingleProductFromDB(
     req.params.id as string,
@@ -86,6 +97,7 @@ const deactivateProduct = catchAsync(async (req: Request, res: Response) => {
 export const ProductControllers = {
   createProduct,
   createProductWithDetails,
+  getTopPopularProducts,
   getAllProducts,
   getSingleProduct,
   updateProduct,

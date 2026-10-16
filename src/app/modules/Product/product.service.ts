@@ -15,6 +15,7 @@ import type { TUserRole } from "../User/user.interface.ts";
 
 import QueryBuilder from "../../builder/QueryBuilder.ts";
 import { ReviewServices } from "../Review/review.service.ts";
+import { orderItemModel } from "../OrderItem/orderItem.model.ts";
 
 
 const productSearchableFields = ["name", "description"];
@@ -311,6 +312,47 @@ const getAllProductsFromDB = async (
   const meta = await productQuery.countTotal();
 
   return { meta, result };
+};
+
+const getTopPopularProductsFromDB = async () => {
+  const popularProducts = await orderItemModel.aggregate<{
+    _id: import("mongoose").Types.ObjectId;
+    totalSold: number;
+  }>([
+    {
+      $group: {
+        _id: "$product",
+        totalSold: { $sum: "$quantity" },
+      },
+    },
+    { $sort: { totalSold: -1, _id: 1 } },
+    { $limit: 8 },
+  ]);
+
+  if (!popularProducts.length) return [];
+
+  const productIds = popularProducts.map((item) => item._id);
+
+  const products = await productModel
+    .find({
+      _id: { $in: productIds },
+      isDeleted: false,
+      isActive: true,
+    })
+    .populate("category", "name slug")
+    .populate("collections", "name slug")
+    .populate("images", "url alt sortOrder")
+    .populate("variants")
+    .exec();
+
+  // Preserve the popularity order from the aggregation.
+  const productMap = new Map(
+    products.map((product) => [String(product._id), product]),
+  );
+
+  return productIds
+    .map((id) => productMap.get(String(id)))
+    .filter((product) => product !== undefined);
 };
 
 const getSingleProductFromDB = async (
@@ -693,6 +735,7 @@ export const ProductServices = {
   createProductIntoDB,
   createProductWithDetailsIntoDB,
   getAllProductsFromDB,
+  getTopPopularProductsFromDB,
   getSingleProductFromDB,
   updateProductIntoDB,
   deactivateProductIntoDB,

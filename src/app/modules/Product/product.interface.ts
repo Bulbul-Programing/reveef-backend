@@ -65,3 +65,47 @@ export interface TDetailProduct {
     images: TProductImage[];
     variants: TProductVariant[];
 }
+
+
+///
+
+// Backend product document type — adapt this to your existing schema.
+export type TProductDocument = {
+    _id: Types.ObjectId;
+    name: string;
+    slug: string;
+    description: string;
+    category: Types.ObjectId;
+    collections?: Types.ObjectId[];
+    basePrice: number;
+    discountPrice?: number;
+    isFeatured: boolean;
+    isActive: boolean;
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+// Use a separate type for the populated API result if needed.
+export type TPopulatedProduct = Omit<
+    TProductDocument,
+    "category" | "collections"
+> & {
+    category: {
+        _id: Types.ObjectId;
+        name: string;
+        slug: string;
+    };
+    collections?: {
+        _id: Types.ObjectId;
+        name: string;
+        slug: string;
+    }[];
+    images: {
+        _id: Types.ObjectId;
+        url: string;
+        alt?: string;
+        sortOrder: number;
+    }[];
+    variants: unknown[];
+};

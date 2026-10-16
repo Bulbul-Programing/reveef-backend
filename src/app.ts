@@ -10,7 +10,7 @@ import { authRateLimiter, generalRateLimiter } from './app/middleware/rateLimite
 
 const app: Application = express()
 
-app.use(cors({ origin: ["http://localhost:3000"] }))
+app.use(cors({ origin: ["https://reveef.vercel.app", "https://reveef-pkahp8gcw-reveef.vercel.app"] }))
 
 app.use(express.json());
 
