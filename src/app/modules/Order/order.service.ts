@@ -51,6 +51,7 @@ type TGuestCheckoutPayload = {
     fullName: string;
     phoneNumber?: string;
     address: string;
+    divition: string;
     district: string;
     upazila: string;
     postalCode?: string;
@@ -92,6 +93,7 @@ const guestCheckoutIntoDB = async (
       phoneNumber:
         payload.address.phoneNumber || payload.phoneNumber,
       address: payload.address.address,
+      divition: payload.address.divition,
       district: payload.address.district,
       upazila: payload.address.upazila,
       postalCode: payload.address.postalCode,
@@ -442,31 +444,167 @@ const getMyOrdersFromDB = async (
   userId: string,
   query: Record<string, unknown>
 ) => {
-  const orderQuery = new QueryBuilder(
-    orderModel
+  // =========================================================
+  // ORDER FILTER
+  // =========================================================
+
+  const orderFilter: Record<string, unknown> = {
+    user: userId,
+  };
+
+  const searchTerm = query.searchTerm as string;
+
+  // =========================================================
+  // SEARCH
+  // =========================================================
+
+  if (searchTerm) {
+    const regex = new RegExp(searchTerm, "i");
+
+    // -------------------------------------------------------
+    // Search addresses
+    // -------------------------------------------------------
+
+    const addresses = await addressModel
       .find({
         user: userId,
+        $or: [
+          {
+            address: regex,
+          },
+          {
+            district: regex,
+          },
+          {
+            upazila: regex,
+          },
+        ],
       })
+      .select("_id");
+
+    const addressIds = addresses.map(
+      (address) => address._id
+    );
+
+    // -------------------------------------------------------
+    // Search order items
+    // -------------------------------------------------------
+
+    const orderItems = await orderItemModel
+      .find({
+        productName: regex,
+      })
+      .select("order");
+
+    const orderIdsFromItems = orderItems.map(
+      (item) => item.order
+    );
+
+    // -------------------------------------------------------
+    // Search order
+    // -------------------------------------------------------
+
+    orderFilter.$or = [
+      {
+        orderNumber: regex,
+      },
+      {
+        address: {
+          $in: addressIds,
+        },
+      },
+      {
+        _id: {
+          $in: orderIdsFromItems,
+        },
+      },
+    ];
+  }
+
+  // =========================================================
+  // QUERY BUILDER
+  // =========================================================
+
+  const orderQuery = new QueryBuilder(
+    orderModel
+      .find(orderFilter)
+      .populate(
+        "user",
+        "name phoneNumber"
+      )
       .populate("address")
       .populate(
         "statusLog.changedBy",
         "name phoneNumber role"
+      )
+      .populate(
+        "coupon",
+        "name type value minimumPurchase usageLimit usedCount"
       ),
     query
   )
-    .search(orderSearchableFields)
     .filter()
+    .dateRange("createdAt")
     .sort()
     .paginate()
     .fields();
 
   const result = await orderQuery.modelQuery;
 
-  const meta = await orderQuery.countTotal();
+  // =========================================================
+  // GET ORDER ITEMS
+  // =========================================================
+
+  const orderIds = result.map(
+    (order) => order._id
+  );
+
+  const orderItems = await orderItemModel
+    .find({
+      order: {
+        $in: orderIds,
+      },
+    })
+    .populate({
+      path: "product",
+      select:
+        "name slug basePrice discountPrice",
+      populate: {
+        path: "images",
+        select:
+          "url alt sortOrder",
+      },
+    })
+    .populate(
+      "variant",
+      "color sku size price stock image"
+    );
+
+  // =========================================================
+  // ATTACH ITEMS TO ORDERS
+  // =========================================================
+
+  const resultWithItems = result.map(
+    (order) => ({
+      ...order.toObject(),
+      items: orderItems.filter(
+        (item) =>
+          item.order.toString() ===
+          order._id.toString()
+      ),
+    })
+  );
+
+  // =========================================================
+  // META
+  // =========================================================
+
+  const meta =
+    await orderQuery.countTotal();
 
   return {
     meta,
-    result,
+    result: resultWithItems,
   };
 };
 
@@ -667,7 +805,7 @@ const getAllOrdersFromDB = async (
 
 const getSingleOrderFromDB = async (
   orderId: string,
-  requester: TRequester
+  // requester: TRequester
 ) => {
   const order = await orderModel
     .findById(orderId)
@@ -696,19 +834,19 @@ const getSingleOrderFromDB = async (
     order.user
   );
 
-  const isOwner =
-    orderUserId === requester.id;
+  // const isOwner =
+  //   orderUserId === requester.id;
 
-  const isStaff =
-    requester.role === "admin" ||
-    requester.role === "stuff";
+  // const isStaff =
+  //   requester.role === "admin" ||
+  //   requester.role === "stuff";
 
-  if (!isOwner && !isStaff) {
-    throw new AppError(
-      403,
-      "You are not allowed to view this order"
-    );
-  }
+  // if (!isOwner && !isStaff) {
+  //   throw new AppError(
+  //     403,
+  //     "You are not allowed to view this order"
+  //   );
+  // }
 
   const items =
     await orderItemModel.find({

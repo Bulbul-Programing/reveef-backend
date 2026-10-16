@@ -24,6 +24,11 @@ const addressSchema = new mongoose.Schema<TAddress>(
             required: true,
         },
 
+        divition: {
+            type: String,
+            require: true
+        },
+
         district: {
             type: String,
             required: true,

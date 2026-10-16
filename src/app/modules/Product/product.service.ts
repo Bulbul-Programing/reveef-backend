@@ -16,6 +16,7 @@ import type { TUserRole } from "../User/user.interface.ts";
 import QueryBuilder from "../../builder/QueryBuilder.ts";
 import { ReviewServices } from "../Review/review.service.ts";
 
+
 const productSearchableFields = ["name", "description"];
 
 const generateSlug = (name: string) =>
@@ -193,13 +194,103 @@ const getAllProductsFromDB = async (
   const canManageProducts =
     requesterRole === "admin" || requesterRole === "stuff";
 
-  const baseFilter = canManageProducts
-    ? {isDeleted: false}
-    : {
-      isActive: true,
-      isDeleted: false,
-    };
+  const {
+    category,
+    color,
+    size,
+    inStock,
+    onSale,
+    ...remainingQuery
+  } = query;
 
+  const baseFilter: Record<string, any> = {
+    isDeleted: false,
+    ...(!canManageProducts && { isActive: true }),
+  };
+
+  // 1. Filter by category slug
+  if (category) {
+    const categorySlugs = String(category)
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    const categories = await categoryModel
+      .find({ slug: { $in: categorySlugs } })
+      .select("_id")
+      .lean();
+
+    const categoryIds = categories.map((item) => item._id);
+
+    baseFilter.category = { $in: categoryIds };
+  }
+
+  // 2. Filter by color, size, and stock through variants
+  const variantFilter: Record<string, unknown> = {};
+
+  if (color) {
+    const colors = String(color)
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    variantFilter["color.name"] = {
+      $in: colors.map(
+        (value) =>
+          new RegExp(
+            `^${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+            "i"
+          )
+      ),
+    };
+  }
+
+  if (size) {
+    variantFilter.size = {
+      $in: String(size)
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    };
+  }
+
+  if (inStock === "true" || inStock === true) {
+    variantFilter.stock = { $gt: 0 };
+    variantFilter.isActive = true;
+  }
+
+  const hasVariantFilters = Object.keys(variantFilter).length > 0;
+
+  if (hasVariantFilters) {
+    const matchingVariants = await productVariantModel
+      .find(variantFilter)
+      .select("product")
+      .lean();
+
+    const productIds = [
+      ...new Set(
+        matchingVariants.map((variant) => String(variant.product))
+      ),
+    ];
+
+    // No matching variants means no matching products.
+    baseFilter._id = {
+      $in: productIds.map((id) => new Types.ObjectId(id)),
+    };
+  }
+
+  // 3. Filter products that are on sale
+  if (onSale === "true" || onSale === true) {
+    baseFilter.$expr = {
+      $and: [
+        { $gt: ["$discountPrice", 0] },
+        { $lt: ["$discountPrice", "$basePrice"] },
+      ],
+    };
+  }
+
+  // 4. Run the existing QueryBuilder.
+  // Custom filter parameters have already been handled above.
   const productQuery = new QueryBuilder(
     productModel
       .find(baseFilter)
@@ -207,11 +298,11 @@ const getAllProductsFromDB = async (
       .populate("collections", "name slug")
       .populate("images", "url alt sortOrder")
       .populate("variants"),
-    query
+    remainingQuery
   )
     .search(productSearchableFields)
     .filter()
-    .priceRange("basePrice")
+    .priceRange("discountPrice")
     .sort()
     .paginate()
     .fields();

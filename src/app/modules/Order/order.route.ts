@@ -26,7 +26,7 @@ router.get("/", checkAuth("admin", "stuff"), OrderControllers.getAllOrders);
 
 router.get(
     "/:id",
-    checkAuth("customer", "admin", "stuff"),
+    // checkAuth("customer", "admin", "stuff"),
     OrderControllers.getSingleOrder
 );
 

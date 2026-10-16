@@ -7,7 +7,7 @@ import { CategoryValidation } from "./category.validation.ts";
 const router = Router();
 
 // Public storefront routes — active categories only, no auth required
-router.get("/", checkAuth("admin", "stuff"), CategoryControllers.getAllCategories);
+router.get("/", CategoryControllers.getAllCategories);
 router.get("/admin", checkAuth("admin", "stuff"), CategoryControllers.getAllCategories);
 router.get("/:id", CategoryControllers.getSingleCategory);
 

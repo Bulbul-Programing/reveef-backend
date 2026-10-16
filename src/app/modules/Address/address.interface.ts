@@ -5,6 +5,7 @@ export type TAddress = {
   fullName: string;
   phoneNumber: string;
   address: string;
+  divition: string;
   district: string;
   upazila: string;
   postalCode?: string;

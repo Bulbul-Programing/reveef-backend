@@ -9,6 +9,7 @@ const router = Router();
 // Public storefront routes — active variants only, no auth required
 // Supports ?product=<id> to list all variants for a given product
 router.get("/", ProductVariantControllers.getAllProductVariants);
+router.get("/colorsAndSize", ProductVariantControllers.getAllSizesAndColors);
 router.get("/:id", ProductVariantControllers.getSingleProductVariant);
 
 // Admin / stuff management routes

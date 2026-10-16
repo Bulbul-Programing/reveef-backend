@@ -20,7 +20,7 @@ const ensureUniqueSku = async (baseSku: string, excludeId?: string) => {
   let sku = baseSku;
   let suffix = 1;
 
-  for (;;) {
+  for (; ;) {
     const existing = await productVariantModel.findOne({
       sku,
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
@@ -170,6 +170,63 @@ const deactivateProductVariantIntoDB = async (variantId: string) => {
   return result;
 };
 
+const getAllSizesAndColors = async () => {
+  const [sizes, colors] = await Promise.all([
+    productVariantModel.aggregate([
+      {
+        $match: {
+          size: { $exists: true, $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: { $toLower: "$size" },
+          name: { $first: "$size" },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          count: 1,
+        },
+      },
+      { $sort: { name: 1 } },
+    ]),
+
+    productVariantModel.aggregate([
+      {
+        $match: {
+          "color.name": { $exists: true, $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: { $toLower: "$color.name" },
+          name: { $first: "$color.name" },
+          hexCode: { $first: "$color.hexCode" },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          hexCode: 1,
+          count: 1,
+        },
+      },
+      { $sort: { name: 1 } },
+    ]),
+  ]);
+
+  return {
+    sizes,
+    colors,
+  };
+};
+
 export const ProductVariantServices = {
   createProductVariantIntoDB,
   getAllProductVariantsFromDB,
@@ -177,4 +234,5 @@ export const ProductVariantServices = {
   updateProductVariantIntoDB,
   adjustStockIntoDB,
   deactivateProductVariantIntoDB,
+  getAllSizesAndColors
 };

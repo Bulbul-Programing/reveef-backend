@@ -13,6 +13,7 @@ import { UserRoutes } from '../modules/User/user.route.ts';
 import { loginRoute } from '../modules/auth/auth.routes.ts';
 import { productRouter } from '../modules/Product/product.route.ts';
 import { dashboardRoutes } from '../modules/Dashboard/Dashboard.route.ts';
+import { customerDashboardRoutes } from '../modules/customerDashboard/CustomerDashboard.router.ts';
 
 type TModuleRoute = {
     path: string,
@@ -77,6 +78,10 @@ const moduleRoutes: TModuleRoute[] = [
     {
         path: '/dashboard',
         route: dashboardRoutes
+    },
+    {
+        path: '/customer/dashboard',
+        route: customerDashboardRoutes
     },
 ]
 

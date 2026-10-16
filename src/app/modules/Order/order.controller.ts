@@ -58,10 +58,7 @@ const getAllOrders = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderServices.getSingleOrderFromDB(req.params.id as string, {
-    id: req.user.id,
-    role: req.user.role,
-  });
+  const result = await OrderServices.getSingleOrderFromDB(req.params.id as string);
 
   sendResponse(res, {
     statusCode: 200,

@@ -103,9 +103,9 @@ const findOrCreateGuestUserIntoDB = async (payload: {
     needPasswordChange: true,
     isActive: true,
   });
-  
+
   newUser.password = randomPassword
-  
+
   return newUser;
 };
 
@@ -212,7 +212,7 @@ const changePasswordIntoDB = async (
   }
 
   const hashedPassword = await bcrypt.hash(payload.newPassword, 10);
-  await userModel.findByIdAndUpdate(userId, { password: hashedPassword });
+  await userModel.findByIdAndUpdate(userId, { password: hashedPassword, needPasswordChange: false });
 
   return null;
 };

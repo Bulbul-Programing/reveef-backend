@@ -78,8 +78,7 @@ const getAddressesByUserFromDB = async (
   userId: string,
   query: Record<string, unknown>
 ) => {
-  const g = await addressModel.find({ user: userId })
-  console.log(g);
+ 
   // Default address surfaces first, then most recently added.
   const queryWithDefaultSort = { sort: "-isDefault,-createdAt", ...query };
 

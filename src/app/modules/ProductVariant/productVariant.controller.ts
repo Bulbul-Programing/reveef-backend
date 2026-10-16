@@ -87,6 +87,17 @@ const deactivateProductVariant = catchAsync(async (req: Request, res: Response) 
   });
 });
 
+const getAllSizesAndColors = catchAsync(async (req: Request, res: Response) => {
+  const result = await ProductVariantServices.getAllSizesAndColors();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Product Colors retrieved successfully",
+    data: result,
+  });
+});
+
 export const ProductVariantControllers = {
   createProductVariant,
   getAllProductVariants,
@@ -94,4 +105,5 @@ export const ProductVariantControllers = {
   updateProductVariant,
   adjustStock,
   deactivateProductVariant,
+  getAllSizesAndColors
 };

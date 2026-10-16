@@ -3,6 +3,7 @@ import { Router } from "express";
 import type { NextFunction, Request, Response } from "express";
 import { DashboardQueryError, type TDashboardQuery } from "./Dashboard.utils.ts";
 import { dashboardService } from "./Dashboard.service.ts";
+import { checkAuth } from "../../middleware/checkAuth.ts";
 
 const getDashboardOverview = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -23,7 +24,7 @@ const getDashboardOverview = async (req: Request, res: Response, next: NextFunct
 const router = Router();
 
 // Add your auth middleware here, e.g. router.get("/overview", auth("admin", "stuff"), ...)
-router.get("/overview", getDashboardOverview);
+router.get("/overview", checkAuth("admin", "stuff"), getDashboardOverview);
 
 export const dashboardRoutes = router;
 

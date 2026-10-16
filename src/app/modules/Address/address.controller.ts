@@ -18,7 +18,7 @@ const createAddress = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyAddresses = catchAsync(async (req: Request, res: Response) => {
-  console.log(req.user.id, req.query);
+  
   const { meta, result } = await AddressServices.getAddressesByUserFromDB(
     req.user.id,
     req.query
