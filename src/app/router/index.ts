@@ -14,6 +14,7 @@ import { loginRoute } from '../modules/auth/auth.routes.ts';
 import { productRouter } from '../modules/Product/product.route.ts';
 import { dashboardRoutes } from '../modules/Dashboard/Dashboard.route.ts';
 import { customerDashboardRoutes } from '../modules/customerDashboard/CustomerDashboard.router.ts';
+import { freeShippingRoutes } from '../modules/FreeShipping/FreeShipping.route.ts';
 
 type TModuleRoute = {
     path: string,
@@ -82,6 +83,10 @@ const moduleRoutes: TModuleRoute[] = [
     {
         path: '/customer/dashboard',
         route: customerDashboardRoutes
+    },
+    {
+        path: '/free-shipping',
+        route: freeShippingRoutes
     },
 ]
 

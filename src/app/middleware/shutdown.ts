@@ -17,7 +17,7 @@ export const setupGracefulShutdown = (server: Server) => {
             console.log("HTTP server closed.");
 
             // await prisma.$disconnect();
-            console.log("Prisma disconnected.");
+            console.log("MongoDB disconnected.");
         } catch (error) {
             console.error("Error during shutdown:", error);
         } finally {

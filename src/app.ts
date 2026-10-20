@@ -6,7 +6,6 @@ import cookieParser from 'cookie-parser';
 import { envVars } from './app/envConfig/index.js';
 import router from './app/router/index.js';
 import globalErrorHandler from './app/middleware/globalErrorHandler.js';
-import { authRateLimiter, generalRateLimiter } from './app/middleware/rateLimiter.ts';
 
 const app: Application = express()
 

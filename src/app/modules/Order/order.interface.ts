@@ -45,6 +45,7 @@ export type TUpdateOrderPayload = Partial<{
   name: string;
   phoneNumber: string;
   address: string;
+  division: string;
   district: string;
   upazila: string;
   discount: number;

@@ -1,14 +1,10 @@
-
 import { ZodError } from 'zod';
 import handleZodError from '../error/handleZoodValidationError.js';
 import handleDuplicateError from '../error/handleDupleacteError.js';
 import AppError from '../error/AppError.js';
 import type { NextFunction, Request, Response } from 'express';
-// import { handlePrismaClientError } from '../error/handlePrismaClientError.js';
-// import { handlePrismaClientError } from '../error/handlePrismaClientError.js';
 import type { TErrorSource } from '../types/error.type.js';
 import { envVars } from '../envConfig/index.js';
-// import { Prisma } from '../../../prisma/generated/prisma/client.js';
 
 const globalErrorHandler = (
     err: any,

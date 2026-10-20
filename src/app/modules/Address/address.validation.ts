@@ -11,7 +11,7 @@ const createAddressValidationSchema = z.object({
       .string({ message: "Address line is required" })
       .trim()
       .min(1),
-    divition: z.string({ message: "Divition is required" }).trim().min(1),
+    division: z.string({ message: "Division is required" }).trim().min(1),
     district: z.string({ message: "City is required" }).trim().min(1),
     upazila: z.string().trim().optional(),
     postalCode: z.string().trim().optional(),
@@ -25,7 +25,7 @@ const updateAddressValidationSchema = z.object({
       fullName: z.string().trim().min(1).optional(),
       phoneNumber: z.string().trim().min(6).optional(),
       address: z.string().trim().min(1).optional(),
-      divition: z.string().trim().min(1).optional(),
+      division: z.string().trim().min(1).optional(),
       district: z.string().trim().min(1).optional(),
       upazila: z.string().trim().optional(),
       postalCode: z.string().trim().optional(),

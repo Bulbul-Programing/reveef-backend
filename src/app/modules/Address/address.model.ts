@@ -24,7 +24,7 @@ const addressSchema = new mongoose.Schema<TAddress>(
             required: true,
         },
 
-        divition: {
+        division: {
             type: String,
             require: true
         },

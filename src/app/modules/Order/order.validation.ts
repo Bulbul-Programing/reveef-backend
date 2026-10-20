@@ -27,8 +27,8 @@ const checkoutValidationSchema = z.object({
         .string({ message: "Address is required" })
         .trim()
         .min(1),
-      divition: z
-        .string({ message: "Divition is required" })
+      division: z
+        .string({ message: "Division is required" })
         .trim()
         .min(1),
       district: z
