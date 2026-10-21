@@ -15,6 +15,7 @@ import { productRouter } from '../modules/Product/product.route.ts';
 import { dashboardRoutes } from '../modules/Dashboard/Dashboard.route.ts';
 import { customerDashboardRoutes } from '../modules/customerDashboard/CustomerDashboard.router.ts';
 import { freeShippingRoutes } from '../modules/FreeShipping/FreeShipping.route.ts';
+import { sendEmailRouter } from '../modules/Email/sendContactEmailRouter.ts';
 
 type TModuleRoute = {
     path: string,
@@ -87,6 +88,10 @@ const moduleRoutes: TModuleRoute[] = [
     {
         path: '/free-shipping',
         route: freeShippingRoutes
+    },
+    {
+        path: '/send-email',
+        route: sendEmailRouter
     },
 ]
 
